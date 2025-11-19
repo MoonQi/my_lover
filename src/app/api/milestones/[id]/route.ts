@@ -4,13 +4,10 @@ import { milestoneUpdateSchema } from '@/lib/validation';
 import { ZodError } from 'zod';
 import { deleteImage } from '@/lib/imageOptimization';
 
-interface RouteParams {
-  params: {
-    id: string;
-  };
-}
-
-export async function GET(request: NextRequest, { params }: RouteParams) {
+export async function GET(
+  request: NextRequest,
+  { params }: { params: { id: string } }
+) {
   try {
     const milestone = await prisma.milestone.findUnique({
       where: { id: params.id },
@@ -33,7 +30,10 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
   }
 }
 
-export async function PUT(request: NextRequest, { params }: RouteParams) {
+export async function PUT(
+  request: NextRequest,
+  { params }: { params: { id: string } }
+) {
   try {
     const body = await request.json();
     const validatedData = milestoneUpdateSchema.parse(body);
@@ -88,7 +88,10 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
   }
 }
 
-export async function DELETE(request: NextRequest, { params }: RouteParams) {
+export async function DELETE(
+  request: NextRequest,
+  { params }: { params: { id: string } }
+) {
   try {
     // Check if milestone exists
     const existingMilestone = await prisma.milestone.findUnique({
