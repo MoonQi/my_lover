@@ -4,13 +4,18 @@ import { milestoneUpdateSchema } from '@/lib/validation';
 import { ZodError } from 'zod';
 import { deleteImage } from '@/lib/imageOptimization';
 
-export async function GET(
-  request: NextRequest,
-  { params }: { params: { id: string } }
-) {
+type RouteContext = {
+  params: Promise<{
+    id: string;
+  }>;
+};
+
+export async function GET(request: NextRequest, { params }: RouteContext) {
   try {
+    const { id } = await params;
+
     const milestone = await prisma.milestone.findUnique({
-      where: { id: params.id },
+      where: { id },
     });
 
     if (!milestone) {
@@ -30,17 +35,16 @@ export async function GET(
   }
 }
 
-export async function PUT(
-  request: NextRequest,
-  { params }: { params: { id: string } }
-) {
+export async function PUT(request: NextRequest, { params }: RouteContext) {
   try {
+    const { id } = await params;
+
     const body = await request.json();
     const validatedData = milestoneUpdateSchema.parse(body);
 
     // Check if milestone exists
     const existingMilestone = await prisma.milestone.findUnique({
-      where: { id: params.id },
+      where: { id },
     });
 
     if (!existingMilestone) {
@@ -60,7 +64,7 @@ export async function PUT(
     }
 
     const milestone = await prisma.milestone.update({
-      where: { id: params.id },
+      where: { id },
       data: validatedData,
     });
 
@@ -88,14 +92,13 @@ export async function PUT(
   }
 }
 
-export async function DELETE(
-  request: NextRequest,
-  { params }: { params: { id: string } }
-) {
+export async function DELETE(request: NextRequest, { params }: RouteContext) {
   try {
+    const { id } = await params;
+
     // Check if milestone exists
     const existingMilestone = await prisma.milestone.findUnique({
-      where: { id: params.id },
+      where: { id },
     });
 
     if (!existingMilestone) {
@@ -112,7 +115,7 @@ export async function DELETE(
 
     // Delete milestone
     await prisma.milestone.delete({
-      where: { id: params.id },
+      where: { id },
     });
 
     return new NextResponse(null, { status: 204 });
