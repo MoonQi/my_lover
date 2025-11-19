@@ -3,6 +3,8 @@ const nextConfig = {
   output: 'standalone',
   reactStrictMode: true, // 可以改为 false 来禁用双重渲染（仅开发模式）
   images: {
+    // 我们已经在上传时用 sharp 做过优化，这里关闭 Next 内置图片优化，直接返回原图
+    unoptimized: true,
     remotePatterns: [
       {
         protocol: 'https',
