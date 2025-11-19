@@ -1,0 +1,542 @@
+openapi: 3.1.0
+info:
+  title: Anniversary Calendar API
+  description: RESTful API for managing relationship milestones in the Anniversary Calendar application
+  version: 1.0.0
+  contact:
+    name: Anniversary Calendar Development
+  license:
+    name: MIT
+
+servers:
+  - url: http://localhost:3000/api
+    description: Local development server
+  - url: https://my-lover.vercel.app/api
+    description: Production server
+
+tags:
+  - name: Milestones
+    description: Operations for managing relationship milestones
+  - name: Upload
+    description: Image upload operations
+
+paths:
+  /milestones:
+    get:
+      tags:
+        - Milestones
+      summary: Get all milestones
+      description: Retrieve all milestones sorted by date in descending order (most recent first)
+      operationId: getMilestones
+      parameters:
+        - name: limit
+          in: query
+          description: Maximum number of milestones to return
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 100
+        - name: offset
+          in: query
+          description: Number of milestones to skip (for pagination)
+          required: false
+          schema:
+            type: integer
+            minimum: 0
+            default: 0
+      responses:
+        '200':
+          description: Successfully retrieved milestones
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  milestones:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Milestone'
+                  total:
+                    type: integer
+                    description: Total number of milestones
+                  limit:
+                    type: integer
+                  offset:
+                    type: integer
+              examples:
+                success:
+                  value:
+                    milestones:
+                      - id: "550e8400-e29b-41d4-a716-446655440000"
+                        date: "2024-02-14"
+                        title: "第一次约会"
+                        description: "在美丽的公园里度过了难忘的一天"
+                        imageUrl: "https://blob.vercel-storage.com/abc123.jpg"
+                        imageWidth: 1920
+                        imageHeight: 1080
+                        createdAt: "2024-01-15T10:30:00.000Z"
+                        updatedAt: "2024-01-15T10:30:00.000Z"
+                    total: 1
+                    limit: 100
+                    offset: 0
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+    post:
+      tags:
+        - Milestones
+      summary: Create a new milestone
+      description: Create a new relationship milestone with optional image
+      operationId: createMilestone
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MilestoneInput'
+            examples:
+              withImage:
+                summary: Milestone with image
+                value:
+                  date: "2024-02-14"
+                  title: "求婚纪念日"
+                  description: "人生中最重要的时刻"
+                  imageUrl: "https://blob.vercel-storage.com/proposal.jpg"
+                  imageWidth: 1920
+                  imageHeight: 1080
+              withoutImage:
+                summary: Milestone without image
+                value:
+                  date: "2024-01-01"
+                  title: "新年快乐"
+                  description: "一起迎接新的一年"
+      responses:
+        '201':
+          description: Milestone created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Milestone'
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /milestones/{id}:
+    get:
+      tags:
+        - Milestones
+      summary: Get a milestone by ID
+      description: Retrieve a single milestone by its unique identifier
+      operationId: getMilestoneById
+      parameters:
+        - name: id
+          in: path
+          description: Milestone ID (UUID)
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Successfully retrieved milestone
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Milestone'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+    put:
+      tags:
+        - Milestones
+      summary: Update a milestone
+      description: Update an existing milestone. All fields are optional (partial update supported)
+      operationId: updateMilestone
+      parameters:
+        - name: id
+          in: path
+          description: Milestone ID (UUID)
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MilestoneUpdate'
+            examples:
+              updateTitle:
+                summary: Update only title
+                value:
+                  title: "更新后的标题"
+              updateAll:
+                summary: Update all fields
+                value:
+                  date: "2024-03-15"
+                  title: "更新的里程碑"
+                  description: "新的描述"
+                  imageUrl: "https://blob.vercel-storage.com/new-image.jpg"
+      responses:
+        '200':
+          description: Milestone updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Milestone'
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+    delete:
+      tags:
+        - Milestones
+      summary: Delete a milestone
+      description: Permanently delete a milestone and its associated image
+      operationId: deleteMilestone
+      parameters:
+        - name: id
+          in: path
+          description: Milestone ID (UUID)
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '204':
+          description: Milestone deleted successfully
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /milestones/upcoming:
+    get:
+      tags:
+        - Milestones
+      summary: Get upcoming anniversaries
+      description: Retrieve milestones with anniversaries coming up in the next 30 days
+      operationId: getUpcomingMilestones
+      parameters:
+        - name: days
+          in: query
+          description: Number of days to look ahead
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 365
+            default: 30
+      responses:
+        '200':
+          description: Successfully retrieved upcoming milestones
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  upcoming:
+                    type: array
+                    items:
+                      allOf:
+                        - $ref: '#/components/schemas/Milestone'
+                        - type: object
+                          properties:
+                            daysUntil:
+                              type: integer
+                              description: Days until anniversary
+              examples:
+                success:
+                  value:
+                    upcoming:
+                      - id: "550e8400-e29b-41d4-a716-446655440000"
+                        date: "2024-02-14"
+                        title: "第一次约会"
+                        daysUntil: 5
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /upload:
+    post:
+      tags:
+        - Upload
+      summary: Upload an image
+      description: Upload an image file to Vercel Blob Storage. Returns the URL and dimensions.
+      operationId: uploadImage
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required:
+                - file
+              properties:
+                file:
+                  type: string
+                  format: binary
+                  description: Image file (JPEG, PNG, or WebP)
+      responses:
+        '200':
+          description: Image uploaded successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - url
+                  - width
+                  - height
+                properties:
+                  url:
+                    type: string
+                    format: uri
+                    description: Vercel Blob Storage URL
+                  width:
+                    type: integer
+                    description: Image width in pixels
+                  height:
+                    type: integer
+                    description: Image height in pixels
+              examples:
+                success:
+                  value:
+                    url: "https://blob.vercel-storage.com/abc123.jpg"
+                    width: 1920
+                    height: 1080
+        '400':
+          description: Invalid file format or size
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              examples:
+                invalidFormat:
+                  value:
+                    error: "Invalid file format. Only JPEG, PNG, and WebP are supported."
+                    code: "INVALID_FILE_FORMAT"
+                fileTooLarge:
+                  value:
+                    error: "File size exceeds 10MB limit."
+                    code: "FILE_TOO_LARGE"
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+components:
+  schemas:
+    Milestone:
+      type: object
+      required:
+        - id
+        - date
+        - title
+        - createdAt
+        - updatedAt
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: Unique identifier
+          example: "550e8400-e29b-41d4-a716-446655440000"
+        date:
+          type: string
+          format: date
+          description: Date of the milestone (ISO 8601)
+          example: "2024-02-14"
+        title:
+          type: string
+          minLength: 1
+          maxLength: 200
+          description: Short descriptive title
+          example: "第一次约会"
+        description:
+          type: string
+          maxLength: 2000
+          nullable: true
+          description: Detailed description or memory
+          example: "在美丽的公园里度过了难忘的一天"
+        imageUrl:
+          type: string
+          format: uri
+          maxLength: 500
+          nullable: true
+          description: Cloud storage URL for photo
+          example: "https://blob.vercel-storage.com/abc123.jpg"
+        imageWidth:
+          type: integer
+          minimum: 1
+          nullable: true
+          description: Original image width in pixels
+          example: 1920
+        imageHeight:
+          type: integer
+          minimum: 1
+          nullable: true
+          description: Original image height in pixels
+          example: 1080
+        createdAt:
+          type: string
+          format: date-time
+          description: Creation timestamp (ISO 8601)
+          example: "2024-01-15T10:30:00.000Z"
+        updatedAt:
+          type: string
+          format: date-time
+          description: Last update timestamp (ISO 8601)
+          example: "2024-01-15T10:30:00.000Z"
+
+    MilestoneInput:
+      type: object
+      required:
+        - date
+        - title
+      properties:
+        date:
+          type: string
+          format: date
+          description: Date of the milestone (ISO 8601)
+          example: "2024-02-14"
+        title:
+          type: string
+          minLength: 1
+          maxLength: 200
+          description: Short descriptive title
+          example: "第一次约会"
+        description:
+          type: string
+          maxLength: 2000
+          description: Detailed description (optional)
+          example: "在美丽的公园里度过了难忘的一天"
+        imageUrl:
+          type: string
+          format: uri
+          maxLength: 500
+          description: Cloud storage URL for photo (optional)
+          example: "https://blob.vercel-storage.com/abc123.jpg"
+        imageWidth:
+          type: integer
+          minimum: 1
+          description: Image width in pixels (required if imageUrl provided)
+        imageHeight:
+          type: integer
+          minimum: 1
+          description: Image height in pixels (required if imageUrl provided)
+
+    MilestoneUpdate:
+      type: object
+      description: All fields are optional for partial updates
+      properties:
+        date:
+          type: string
+          format: date
+          description: Date of the milestone (ISO 8601)
+          example: "2024-02-14"
+        title:
+          type: string
+          minLength: 1
+          maxLength: 200
+          description: Short descriptive title
+          example: "更新的标题"
+        description:
+          type: string
+          maxLength: 2000
+          nullable: true
+          description: Detailed description (can be null to remove)
+          example: "更新的描述"
+        imageUrl:
+          type: string
+          format: uri
+          maxLength: 500
+          nullable: true
+          description: Cloud storage URL (can be null to remove image)
+          example: "https://blob.vercel-storage.com/new-image.jpg"
+        imageWidth:
+          type: integer
+          minimum: 1
+          nullable: true
+        imageHeight:
+          type: integer
+          minimum: 1
+          nullable: true
+
+    Error:
+      type: object
+      required:
+        - error
+        - code
+      properties:
+        error:
+          type: string
+          description: Human-readable error message
+          example: "Validation failed"
+        code:
+          type: string
+          description: Machine-readable error code
+          example: "VALIDATION_ERROR"
+        details:
+          type: array
+          description: Detailed validation errors (for validation failures)
+          items:
+            type: object
+            properties:
+              field:
+                type: string
+                example: "title"
+              message:
+                type: string
+                example: "标题不能为空"
+
+  responses:
+    ValidationError:
+      description: Request validation failed
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+          examples:
+            validationError:
+              value:
+                error: "Validation failed"
+                code: "VALIDATION_ERROR"
+                details:
+                  - field: "title"
+                    message: "标题不能为空"
+                  - field: "date"
+                    message: "请输入有效的日期"
+
+    NotFound:
+      description: Requested resource not found
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+          examples:
+            notFound:
+              value:
+                error: "Milestone not found"
+                code: "NOT_FOUND"
+
+    InternalServerError:
+      description: Internal server error
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+          examples:
+            serverError:
+              value:
+                error: "An unexpected error occurred"
+                code: "INTERNAL_SERVER_ERROR"
+
+  securitySchemes: {}
+
+security: []

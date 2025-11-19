@@ -1,0 +1,26 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Milestone {
+  id          String   @id @default(uuid())
+  date        DateTime @db.Date
+  title       String   @db.VarChar(200)
+  description String?  @db.Text
+  imageUrl    String?  @db.VarChar(500)
+  imageWidth  Int?
+  imageHeight Int?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([date(sort: Desc)])
+  @@map("milestones")
+}
