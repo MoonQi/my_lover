@@ -1,5 +1,5 @@
-import { formatTimeAgo, daysUntil, formatDate } from '@/lib/dateUtils';
-import { differenceInYears, differenceInMonths, differenceInDays, addYears, addMonths } from 'date-fns';
+import { formatTimeAgo, formatDate } from '@/lib/dateUtils';
+import { differenceInDays } from 'date-fns';
 
 export interface TimeCalculation {
   timeAgo: string;
@@ -14,26 +14,12 @@ export function useTimeCalculation(date: Date | string, isFirstMilestone: boolea
   const dateObj = typeof date === 'string' ? new Date(date) : date;
   const now = new Date();
 
-  // Calculate precise years, months, and days
-  const years = differenceInYears(now, dateObj);
-
-  // Calculate remaining months after subtracting full years
-  const dateAfterYears = addYears(dateObj, years);
-  const months = differenceInMonths(now, dateAfterYears);
-
-  // Calculate remaining days after subtracting full years and months
-  const dateAfterYearsAndMonths = addMonths(dateAfterYears, months);
-  const days = differenceInDays(now, dateAfterYearsAndMonths);
+  // 以「天」为单位计算在一起的总时长
+  const daysTogether = differenceInDays(now, dateObj);
 
   let totalTimeTogether: string | undefined;
   if (isFirstMilestone) {
-    if (years > 0) {
-      totalTimeTogether = `${years}年${months > 0 ? months + '个月' : ''}`;
-    } else if (months > 0) {
-      totalTimeTogether = `${months}个月`;
-    } else {
-      totalTimeTogether = `${days}天`;
-    }
+    totalTimeTogether = `${daysTogether}天`;
   }
 
   return {

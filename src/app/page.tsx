@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { Timeline } from '@/components/features/Timeline/Timeline';
 import { UpcomingList } from '@/components/features/UpcomingAnniversaries/UpcomingList';
 import { Modal } from '@/components/ui/Modal';
+import { Navigation } from '@/components/ui/Navigation';
 import { MilestoneForm } from '@/components/features/MilestoneForm';
 import { useMilestones } from '@/hooks/useMilestones';
 import { useTimeCalculation } from '@/hooks/useTimeCalculation';
@@ -42,6 +43,9 @@ export default function Home() {
   return (
     <main className="min-h-screen bg-gradient-to-b from-pink-50 via-white to-romantic-50 overflow-x-hidden">
       <div className="mx-auto max-w-6xl px-4 py-12 sm:px-6 lg:px-8">
+        {/* Navigation */}
+        <Navigation />
+
         {/* Header with "Together Since" */}
         <header className="mb-16 text-center animate-fade-in">
           {totalTimeTogether && (
