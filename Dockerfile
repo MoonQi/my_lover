@@ -3,7 +3,10 @@
 
 # Stage 1: Dependencies
 FROM node:20-alpine AS deps
-RUN corepack enable && corepack prepare pnpm@latest --activate
+# 设置 npm 镜像源为淘宝源，加速下载
+RUN npm config set registry https://registry.npmmirror.com/
+# 直接安装 pnpm，不依赖 corepack 的网络查询
+RUN npm install -g pnpm
 
 WORKDIR /app
 
@@ -15,7 +18,8 @@ RUN pnpm install --frozen-lockfile
 
 # Stage 2: Builder
 FROM node:20-alpine AS builder
-RUN corepack enable && corepack prepare pnpm@latest --activate
+RUN npm config set registry https://registry.npmmirror.com/
+RUN npm install -g pnpm
 
 WORKDIR /app
 
@@ -35,7 +39,6 @@ RUN pnpm build
 
 # Stage 3: Runner
 FROM node:20-alpine AS runner
-RUN corepack enable && corepack prepare pnpm@latest --activate
 
 WORKDIR /app
 
