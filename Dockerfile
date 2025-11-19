@@ -65,8 +65,10 @@ COPY --from=builder /app/prisma ./prisma
 # Create uploads directory for images
 RUN mkdir -p /app/public/uploads && chown -R nextjs:nodejs /app/public/uploads
 
-# Switch to non-root user
-USER nextjs
+# NOTE: We originally switched to a non-root user (`nextjs`) for security,
+# but this caused permission issues when writing to the mounted uploads volume.
+# For now, run as root to ensure the app can write to /app/public/uploads.
+USER root
 
 # Expose port
 EXPOSE 3000
