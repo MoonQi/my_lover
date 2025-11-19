@@ -2,7 +2,7 @@
 # Based on Next.js official Docker example with optimizations
 
 # Stage 1: Dependencies
-FROM node:20-alpine AS deps
+FROM node:20 AS deps
 # 设置 npm 镜像源为淘宝源，加速下载
 RUN npm config set registry https://registry.npmmirror.com/
 # 直接安装 pnpm，不依赖 corepack 的网络查询
@@ -17,7 +17,7 @@ COPY package.json pnpm-lock.yaml* ./
 RUN pnpm install --frozen-lockfile
 
 # Stage 2: Builder
-FROM node:20-alpine AS builder
+FROM node:20 AS builder
 RUN npm config set registry https://registry.npmmirror.com/
 RUN npm install -g pnpm
 
@@ -38,7 +38,7 @@ RUN pnpm prisma generate
 RUN pnpm build
 
 # Stage 3: Runner
-FROM node:20-alpine AS runner
+FROM node:20 AS runner
 
 WORKDIR /app
 

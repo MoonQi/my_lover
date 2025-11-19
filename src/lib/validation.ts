@@ -29,13 +29,14 @@ export const milestoneSchema = z.object({
     .max(2000, '描述不能超过2000个字符')
     .optional()
     .transform((val) => (val === '' ? null : val)),
-  // 前端表单会在"无图片"时提交空字符串，这里预处理为空则视为未提供
-  imageUrl: z
-    .preprocess(
-      (val) => (val === '' ? undefined : val),
-      urlOrPath
-    )
-    .optional(),
+  // 前端表单在“无图片”时会提交空字符串或不提交该字段
+  // 这里允许：
+  // - 未提供（undefined）
+  // - 空字符串（会被转换为 undefined）
+  // - 合法的 URL 或以 / 开头的相对路径
+  imageUrl: urlOrPath
+    .optional()
+    .transform((val) => (val === '' ? undefined : val)),
   imageWidth: z.number().int().positive().optional(),
   imageHeight: z.number().int().positive().optional(),
 });
@@ -50,13 +51,15 @@ export const milestoneUpdateSchema = z.object({
     .optional()
     .nullable()
     .transform((val) => (val === '' ? null : val)),
-  // 更新时，空字符串表示"清除图片"，因此预处理为 null
-  imageUrl: z
-    .preprocess(
-      (val) => (val === '' ? null : val),
-      urlOrPath.nullable()
-    )
-    .optional(),
+  // 更新时：
+  // - 未提供（undefined）：不更新该字段
+  // - 空字符串：视为“清除图片”，转换为 null
+  // - null：保留为 null
+  // - 其他字符串：必须是合法 URL 或以 / 开头的相对路径
+  imageUrl: urlOrPath
+    .nullable()
+    .optional()
+    .transform((val) => (val === '' ? null : val)),
   imageWidth: z.number().int().positive().optional().nullable(),
   imageHeight: z.number().int().positive().optional().nullable(),
 });
